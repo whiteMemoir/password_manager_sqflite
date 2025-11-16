@@ -50,52 +50,69 @@ class _PasswordListScreenState extends State<PasswordListScreen> {
 
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
-        title: Text(password == null ? 'Tambah Password' : 'Edit Password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: titleC,
-              decoration: const InputDecoration(labelText: 'Title'),
+      builder: (_) {
+        bool obscure = true;
+        return StatefulBuilder(
+          builder: (context, setState) => AlertDialog(
+            title: Text(password == null ? 'Tambah Password' : 'Edit Password'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleC,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(labelText: 'Title'),
+                  ),
+                  TextField(
+                    controller: usernameC,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(labelText: 'Username'),
+                  ),
+                  TextField(
+                    controller: passwordC,
+                    obscureText: obscure,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      suffixIcon: IconButton(
+                        onPressed: () => setState(() => obscure = !obscure),
+                        icon: Icon(
+                          obscure ? Icons.visibility_off : Icons.visibility,
+                        ),
+                        tooltip: obscure ? 'Tampilkan' : 'Sembunyikan',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            TextField(
-              controller: usernameC,
-              decoration: const InputDecoration(labelText: 'Username'),
-            ),
-            TextField(
-              controller: passwordC,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Batal'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Batal'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  final newPassword = Password(
+                    id: password?.id,
+                    title: titleC.text.trim(),
+                    username: usernameC.text.trim(),
+                    password: passwordC.text,
+                  );
+                  if (password == null) {
+                    await dbHelper.insertPassword(newPassword);
+                  } else {
+                    await dbHelper.updatePassword(newPassword);
+                  }
+                  if (context.mounted) Navigator.of(context).pop();
+                  await _refreshPasswordList();
+                },
+                child: Text(password == null ? 'Tambah' : 'Simpan'),
+              ),
+            ],
           ),
-          ElevatedButton(
-            onPressed: () async {
-              final newPassword = Password(
-                id: password?.id,
-                title: titleC.text.trim(),
-                username: usernameC.text.trim(),
-                password: passwordC.text,
-              );
-
-              if (password == null) {
-                await dbHelper.insertPassword(newPassword);
-              } else {
-                await dbHelper.updatePassword(newPassword);
-              }
-              if (context.mounted) Navigator.of(context).pop();
-              await _refreshPasswordList();
-            },
-            child: Text(password == null ? 'Tambah' : 'Simpan'),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
